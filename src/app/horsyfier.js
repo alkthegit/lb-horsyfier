@@ -18,7 +18,7 @@
 относительно индекса текущей позиции
 Например, если конь стоит на клетке С3 (индекс 18, то сдвиг индекса -17 дает индекс позиции допустимого хода равный 18 + (-17) = 1,
 что соответствует клетке B1 */
-const horseTargetShifts = [-17, -15, -10, -6, 6, 10, 15, 17];
+const horseTargetShifts = [-17, -15, -7, -11, 5, 9, 15, 17];
 
 /* 'enum' - отображение для перевода буквы из названии клетки на шахматной доске в натуральное число от 1 до 8 */
 const LettersValues = new Map([
@@ -46,20 +46,53 @@ const LettersValues = new Map([
     [6, 'f'],
     [7, 'g'],
     [8, 'h']
-])
+]);
 
 class Horsyfier {
     _currentIndex = 0;
+    _currentPosition = 'A1'
+
     get currentPosition() {
         return translateIndexToPositionName(this._currentIndex);
     }
 
     set currentPosition(value) {
+        if (!checkPositionString(value)) {
+            throw new Error(`Позиция задается строкой из двух символов вида A3(или а3), получено значение: '${value}'`);
+        }
+
         this._currentIndex = translatePositionNameToIndex(value);
+        this._currentPosition = value.toLowerCase();
+
+        console.table({ index: this._currentIndex, position: this._currentPosition });
     }
 
     getHorseTargets() {
+        /*
+            Поиск подходящего хода для коня из указанной позиции (соответствующей текущему значению this._currentIndex):
+            1) Найти среди элементов массива horseTargetShifts такое подмножество, элементы которого переводят текущий индекс в новый индекс так, чтобы он оставался в диапазоне  [0; 63], то есть такие элементы shift, что:
+                0 <= this._currentIndex + shift <= 63
+            2) Перевод значений найденных числовых индексов к нормальном виду A1... 
+        */
+
+        // список позиций в формате A1... - возвращаемое значение функции
         const targets = [];
+
+        // 1)
+        /* const newIndexes = horseTargetShifts.filter(e =>
+            (this._currentIndex + e) >= 0 && (this._currentIndex + e) <= 63
+        ); */
+        const newIndexes = horseTargetShifts
+            .map(e => this._currentIndex + e)
+            .filter(e => (e >= 0) && (e <= 63));
+
+        console.log(`currentIndex: ${this._currentIndex}`);
+        console.log(newIndexes);
+        newIndexes.forEach(e => {
+            targets.push(
+                translateIndexToPositionName(e)
+            )
+        });
 
         return targets;
     }
@@ -83,18 +116,17 @@ function translateIndexToPositionName(index) {
     let letter;
 
     // 1) номер строки (1, 2, ... 8), соответствующей клетке с индексом index
-    digit = Math.trunc((index + 1) / 8);
+    digit = Math.ceil((index + 1) / 8);
 
     // 2.1) вычисляем величину остаточного смещения (после извлечения строки) - это просто остаток от деления
     const remainder = (index + 1) % 8;
 
     // 2.2) дополнительно - если остаток равен нулю, то дополнительного смещения нет, и мы находимся на левом или правом краю доски в зависимости от четности строки digit
     if (remainder === 0) {
-
-        letter = (digit - 1) % 2 !== 0 ? LettersValues.get(1) : LettersValues.get(8);
+        letter = digit % 2 !== 0 ? LettersValues.get(1) : LettersValues.get(8);
     }
     else {
-        letter = (digit - 1) % 2 !== 0 ? LettersValues.get(remainder) : LettersValues.get(8 - remainder + 1);
+        letter = digit % 2 !== 0 ? LettersValues.get(remainder) : LettersValues.get(8 - remainder + 1);
     }
 
     positon = `${letter}${digit}`;
@@ -112,8 +144,7 @@ function translatePositionNameToIndex(position) {
     const pos = position.toString();
 
     // 0) Проверяем аргумент на соответствие шаблону
-    const posTestRegExp = /^[a-h][1-8]$/i;
-    if (!posTestRegExp.test(pos)) {
+    if (!checkPositionString(pos)) {
         throw new Error(`Позиция задается строкой из двух символов вида A3(или а3), получено значение: '${pos}'`);
     }
 
@@ -135,4 +166,10 @@ function translatePositionNameToIndex(position) {
     index = rowShift + columnShift;
 
     return index;
+}
+
+/*  */
+const posTestRegExp = /^[a-h][1-8]$/i;
+function checkPositionString(positionString) {
+    return posTestRegExp.test(positionString);
 }
