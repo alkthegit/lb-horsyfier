@@ -24,12 +24,15 @@
     <main>
         <div id="app-horsyfier">
             <form id="horsyForm">
-                <label for="currentPosition">Положение фигуры:</label>
-                <input type="text"
-                    id="currentPosition"
-                    maxlength="2"
-                    required
-                    pattern="^[a-hA-H]{1}[1-8]{1}$">
+                <div class="form-group">
+                    <label for="currentPosition">Положение фигуры:</label>
+                    <input type="text"
+                        id="currentPosition"
+                        maxlength="2"
+                        required
+                        pattern="^[a-hA-H]{1}[1-8]{1}$">
+
+                </div>
 
                 <button type="submit"
                     id="submitButton">Показать ходы</button>

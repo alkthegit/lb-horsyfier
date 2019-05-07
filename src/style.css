@@ -29,4 +29,37 @@ header p{
 header .main-subheading{
     font-size: 16px;
     margin-top: -3px;
+    transform: rotate(-2deg) translateX(5em);
 }
+
+form{
+    margin: 20px auto;
+    padding: 15px;
+    width: 250px;
+}
+
+form label,input,button{
+ display: block;
+}
+
+form label{
+    font-weight: bold;
+    color: #005272;
+}
+
+form input{
+    line-height: 1.5em;
+    font-size: 102%;
+    text-align: right;
+}
+
+form button[type="submit"]{
+    margin-top: 15px;
+    width: 8em;
+    height: 2em;
+    font-size: 1.2em;
+    margin-top: 20px;
+    color: #005272;
+}
+
+
