@@ -22,20 +22,24 @@
     </header>
 
     <main>
-        <div class="app-horsyfier">
-            <form>
+        <div id="app-horsyfier">
+            <form id="horsyForm">
                 <label for="currentPosition">Положение фигуры:</label>
                 <input type="text"
                     id="currentPosition"
-                    maxlength="2">
+                    maxlength="2"
+                    required
+                    pattern="^[a-hA-H]{1}[1-8]{1}$">
 
-                <button type="submit">Показать ходы</button>
+                <button type="submit"
+                    id="submitButton">Показать ходы</button>
             </form>
             <hr>
         </div>
     </main>
 
     <script src="./src/app/horsyfier.js"></script>
+    <script src="./src/app/controller.js"></script>
     <script src="./src/app/app.js"></script>
     <script src="./src/index.js"></script>
 </body>

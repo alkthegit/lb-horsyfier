@@ -94,7 +94,7 @@ class Horsyfier {
             )
         });
 
-        return targets;
+        return targets.sort();
     }
 }
 
