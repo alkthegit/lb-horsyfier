@@ -1,4 +1,6 @@
-const position = 'a8';
-console.log(`index for '${position}' is: ${translatePositionNameToIndex(position)}`);
+let position = 'a8';
+let index = translatePositionNameToIndex(position);
+console.log(`индекс клетки '${position}': ${index}`);
 
-// console.log(LetterValues['C']);
+position = translateIndexToPositionName(index);
+console.log(`клетка с индексом '${index}': ${position}`);
