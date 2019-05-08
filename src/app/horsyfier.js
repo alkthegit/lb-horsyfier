@@ -1,27 +1,9 @@
-/* В данной модели поиска возможных ходов шахматного коня используется представление множества клеток
-шахматной доски как одномерного массива с диапазоном индексов [0; 63].
+const positionFormatRegexp = /^[a-hA-H]{1}[1-9]{1}$/i;
 
-Нумерация клеток производится змейкой, начиная с нижнего левого угла движением вправо и вверх:
-
-  [63] [  ] [  ] [  ] [  ] [  ] [57] [56] ←
-  
-→ [48] [  ] [  ] [  ] [  ] [  ] [54] [55]
-
-...
-
-  [15] [  ] [  ] [  ] [  ] [  ] [ 9] [ 8] ←
- 
-→ [ 0] [ 1] [  ] [  ] [  ] [  ] [  ] [ 7] 
-*/
-
-/* Массив всех возможных одномерных сдвигов индекса для вычисления целевого индекса допустимого хода - 
-относительно индекса текущей позиции
-Например, если конь стоит на клетке С3 (индекс 18, то сдвиг индекса -17 дает индекс позиции допустимого хода равный 18 + (-17) = 1,
-что соответствует клетке B1 */
-const horseTargetShifts = [-17, -15, -7, -11, 5, 9, 15, 17];
-
-/* 'отображение для перевода буквы из названии клетки на шахматной доске в натуральное число от 1 до 8 */
-const LettersValues = new Map([
+/**
+ * @const {Map}
+ */
+const LettersValuesMap = new Map([
     ['a', 1],
     ['b', 2],
     ['c', 3],
@@ -38,138 +20,179 @@ const LettersValues = new Map([
     ['F', 6],
     ['G', 7],
     ['H', 8],
-    [1, 'a'],
-    [2, 'b'],
-    [3, 'c'],
-    [4, 'd'],
-    [5, 'e'],
-    [6, 'f'],
-    [7, 'g'],
-    [8, 'h']
+    [1, 'A'],
+    [2, 'B'],
+    [3, 'C'],
+    [4, 'D'],
+    [5, 'E'],
+    [6, 'F'],
+    [7, 'G'],
+    [8, 'H'],
 ]);
 
-class Horsyfier {
-    _currentIndex = 0;
-    _currentPosition = 'A1'
+/**
+ * @const {{column: number, row: number}[]}
+ */
+const horseTries = [
+    {
+        column: -2, row: -1
+    },
+    {
+        column: -2, row: 1
+    },
+    {
+        column: -1, row: -2
+    },
+    {
+        column: -1, row: 2
+    },
+    {
+        column: 1, row: -2
+    },
+    {
+        column: 1, row: 2
+    },
+    {
+        column: 2, row: -1
+    },
+    {
+        column: 2, row: 1
+    }
+];
 
-    get currentPosition() {
-        return translateIndexToPositionName(this._currentIndex);
+class Horsyfier {
+    /*
+        Числовой двухмерный индекс, соответствующий текущему положению фигуры
+        диапазо каждого измерения - [0; 7].
+        Значеие по умолчанию - {0, 0}, что соответствует клетке A1         
+    */
+    currentIndex = {
+        column: 0,
+        row: 0
     }
 
-    set currentPosition(value) {
-        if (!checkPositionString(value)) {
-            throw new Error(`Позиция задается строкой из двух символов вида A3(или а3), получено значение: '${value}'`);
+    /* Представление клетки шахматной доски в формате A1 в виде объекта*/
+    currentPosition = 'A1';
+
+    /**
+     * Устанавливает текущую позицию шахматной фигуры на доске, в формате A1 или a1, и т.д.
+     * 
+     * @param {string} position - Новая клетка шахматной фигуры 
+     * @returns {void}
+     * @public
+     */
+    setPosition(position) {
+        if (!this.checkPositionFormat(position)) {
+            throw new Error(`Клетка шахматной доски должна быть указана в формате A1 или a1. Передано значение: '${position}'`);
         }
 
-        this._currentIndex = translatePositionNameToIndex(value);
-        this._currentPosition = value.toLowerCase();
-
-        console.table({ index: this._currentIndex, position: this._currentPosition });
+        this.currentIndex = this.translatePositionToIndex(position);
+        this.currentPosition = position.toUpperCase();
     }
 
-    getHorseTargets() {
-        /*
-            Поиск подходящего хода для коня из указанной позиции (соответствующей текущему значению this._currentIndex):
-            1) Найти среди элементов массива horseTargetShifts такое подмножество, элементы которого переводят текущий индекс в новый индекс так, чтобы он оставался в диапазоне  [0; 63], то есть такие элементы shift, что:
-                0 <= this._currentIndex + shift <= 63
-            2) Перевод значений найденных числовых индексов к нормальном виду A1... 
+    /**
+     * @returns {string[]} Массив допустимых ходов в формате A1 и т.п., отсортированный по алфавиту
+     */
+    getHorseMoves() {
+        /* Для поиска возможных ходов конем перебираем допустимые движения из массива horseTries
+        и оставляем те, которые сохраняют индекс колонки и строки в допустимых диапазонах:
+            1. Отфильтровать допустимые ходы
+            2. Перевести найденные ходы в привычный формат A1 и т.д.
         */
+        const moves = horseTries
+            .map(e => this.tryMove(e))
+            .filter(e => this.checkPositionIndex(e))
+            .map(e => this.translateIndexToPosition(e));
 
-        // список позиций в формате A1... - возвращаемое значение функции
-        const targets = [];
-
-        // 1)
-        /* const newIndexes = horseTargetShifts.filter(e =>
-            (this._currentIndex + e) >= 0 && (this._currentIndex + e) <= 63
-        ); */
-        const newIndexes = horseTargetShifts
-            .map(e => this._currentIndex + e)
-            .filter(e => (e >= 0) && (e <= 63));
-
-        console.log(`currentIndex: ${this._currentIndex}`);
-        console.log(newIndexes);
-        newIndexes.forEach(e => {
-            targets.push(
-                translateIndexToPositionName(e)
-            )
-        });
-
-        return targets.sort();
-    }
-}
-
-function translateIndexToPositionName(index) {
-    /* Перевод одномерного индекса на шахматной доске в соответствующее общепринятое двухсимвольное представление - A1 и т.д. 
-        1) Вычисляем цифру в обозначении - это номер строки, которая должна соответствовать индексу index
-            вычисляется как целая часть от деления (index + 1) на 8; +1 здесь необходим для перевода в систему натуральной координаты (как на доске), тогда как диапазон индекса index - [0; 63];
-        2) Вычисляем букву колонки, которая должна соответствовать индексу index
-            2.1) Найти величину остаточного смещения - остаток от деления (index+1) на 8; аналогично предыдущему +1 здесь необходим для перевода в систему натуральной координаты (как на доске), тогда как диапазон индекса index - [0; 63];
-            2.2) В зависимости от четности строки, соответствующей клетке с индексом index, найти числовой индекс нужной буквы в карте LettersValues. Необходимо считать либо от 1 до 8, либо от 8 до 1 
-    */
-    // строковое обозначение клетки шахматной доски, привычное название в виде A1 и т.д. - возвращаемое значение функции
-    let position;
-
-    // номер строки - цифра в названии клетки (1, 2, ..., 8)
-    let digit;
-
-    // колонка на шахматной доске - буква в названии клетки (A, B, ..., H)
-    let letter;
-
-    // 1) номер строки (1, 2, ... 8), соответствующей клетке с индексом index
-    digit = Math.ceil((index + 1) / 8);
-
-    // 2.1) вычисляем величину остаточного смещения (после извлечения строки) - это просто остаток от деления
-    const remainder = (index + 1) % 8;
-
-    // 2.2) дополнительно - если остаток равен нулю, то дополнительного смещения нет, и мы находимся на левом или правом краю доски в зависимости от четности строки digit
-    if (remainder === 0) {
-        letter = digit % 2 !== 0 ? LettersValues.get(1) : LettersValues.get(8);
-    }
-    else {
-        letter = digit % 2 !== 0 ? LettersValues.get(remainder) : LettersValues.get(8 - remainder + 1);
+        return moves.sort();
     }
 
-    positon = `${letter}${digit}`;
-    return positon.toUpperCase();
-}
+    /**
+     * Возвращает гипотетическое положение фигуры после попытки переместить ее на указаное расстояние от текущего положения this.currentIndex
+     * 
+     * @param {{column: number, row: number}} moveIndex двухмерный целочисленный индекс, обозначающий сдвиг фгуры на шахматной доске
+     * @retuns {{column: number, row: number}} двухмерный целочисленный индекс, соответствующий новому возможному положению фигуры на шахматной доске без проверки выхода за границы доски
+     * @private
+     */
+    tryMove(moveIndex) {
+        if (typeof moveIndex === 'undefined') {
+            throw new Error(`Необходимо указать индекс`);
+        }
 
-function translatePositionNameToIndex(position) {
-    /* Вычисление индекса по строковому обозначению клетки на шахматной доске:
-        0) Проверка входных данных
-        1) Выделяем из строки, обозначающей клетку (аргумент position), цифру и букву (строку и колонку доски соответственно)
-        2) По цифре высичляем основное смещение индекса от 0
-        3) По букве с учетом четности строки вычисляем добавочное смещение индекса
-    */
-    let index = 0;
-    const pos = position.toString();
-
-    // 0) Проверяем аргумент на соответствие шаблону
-    if (!checkPositionString(pos)) {
-        throw new Error(`Позиция задается строкой из двух символов вида A3(или а3), получено значение: '${pos}'`);
+        const newPosition = {
+            column: this.currentIndex.column + moveIndex.column,
+            row: this.currentIndex.row + moveIndex.row
+        };
+        return newPosition;
     }
 
-    // 1) Разбираем аргумент на составные части
-    const [letter, digit] = pos.split('');
+    /**
+     * Проверяет, что указаная строка является правильным названием клетки на шахматной доске
+     * @param {string} position - Новая клетка шахматной фигуры
+     * @returns {boolean} true - если аргумент position соответствует формату записи клетки шахматной доски,  false - в противном случае
+     * @private
+     */
+    checkPositionFormat(position) {
+        return positionFormatRegexp.test(position);
+    }
 
-    // 2) смещение индекса от 0, задаваемое строкой (цифрой - 1, 2 и т.д.) 
-    const rowShift = (digit - 1) * 8;
+    /**
+     * Проверяет, что указаный двухмерный индекс является допустимым, то есть значения измерений лежат в допустимых диапазонах {[0; 7], [0; 7]}
+     * @param {{column: number, row: number}} index - Новая клетка шахматной фигуры
+     * @returns {boolean} true - если индекс допустимый и false - в противном случае
+     * @private
+     */
+    checkPositionIndex(index) {
+        if (typeof index === 'undefined') {
+            throw new Error(`Необходимо указать индекс`);
+        }
 
-    /*
-        3) Вычисляем смещение индекса от 0, задаваемое колонкой (буквой - A, B и т.д.) 
-        В зависимости от четности строки, смещение индекса считается:
-            - если номер строки - нечетный, то от 0 до 7 (от левого края доски, что соответствует счету в первой строке),
-            - если номер строки - четный, то от 7 до 0 (от правого края доски) 
-    */
-    const columnShift = digit % 2 !== 0 ? LettersValues.get(letter) - 1 : (8 - (LettersValues.get(letter) - 1)) - 1;
+        return (index.column >= 0 && index.column <= 7) && (index.row >= 0 && index.row <= 7);
+    }
 
-    // вычисляем итоговую величину индекса
-    index = rowShift + columnShift;
+    /**
+     * Переводит привычное название клетки шахматной доски в формате A1 в двумерный индекс {column, row}
+     * 
+     * @param {string} position
+     * @returns {{column: number, row: number}} - двухмерный индекс, соответствующий клетке position. Размерность индекса: {[0;7 ],[0; 7]}
+     * @private
+     */
+    translatePositionToIndex(position) {
+        if (!this.checkPositionFormat(position)) {
+            throw new Error(`Клетка шахматной доски должна быть указана в формате A1 или a1. Передано значение: '${position}'`);
+        }
 
-    return index;
-}
+        let index = {
+            column: 0,
+            row: 0
+        };
 
-/*  */
-const posTestRegExp = /^[a-h][1-8]$/i;
-function checkPositionString(positionString) {
-    return posTestRegExp.test(positionString);
+        const [letter, digit] = position.split('');
+
+        index.row = digit - 1;
+        index.column = LettersValuesMap.get(letter) - 1;
+        return index;
+    }
+
+    /**
+     * Переводит внутреннее представление для положения фигуры на шахматной доске в привычный формат A1 и т.п.
+     * 
+     * @param {{column: number, row: number}} index - двухмерный индекс, соответствующий клетке position. Размерность индекса: {[0;7 ],[0; 7]}
+     * @returns {string} привычное название клетки шахматной доски в формате A1 и т.п.
+     * @private
+     */
+    translateIndexToPosition(index) {
+        if (typeof index === 'undefined') {
+            throw new Error(`Необходимо указать индекс`);
+        }
+
+        const position = {
+            column: LettersValuesMap.get(index.column + 1),
+            row: index.row + 1
+        }
+
+        const result = `${position.column}${position.row}`;
+
+        return result.toUpperCase();
+    }
 }
