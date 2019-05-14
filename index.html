@@ -1,50 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible"
-        content="ie=edge">
-    <link rel="stylesheet"
-        href="./assets/style.css">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="./assets/style.css" />
 
     <title>Horsyfier</title>
-</head>
+  </head>
 
-<body>
+  <body>
     <header>
-        <h1>Приложение 2
-            <p class="main-subheading">horsyfier</p>
-        </h1>
-        <p>Автор: Кузин-Алексинский А.С.</p>
+      <h1>
+        Приложение 2
+        <p class="main-subheading">horsyfier</p>
+      </h1>
+      <p>Автор: Кузин-Алексинский А.С.</p>
     </header>
 
     <main>
-        <div id="app-horsyfier">
-            <form id="horsyForm">
-                <div class="form-group">
-                    <label for="currentPosition">Положение фигуры:</label>
-                    <input type="text"
-                        id="currentPosition"
-                        maxlength="2"
-                        required
-                        pattern="^[a-hA-H]{1}[1-8]{1}$">
+      <div id="app-horsyfier">
+        <form id="horsyForm">
+          <div class="form-group">
+            <label for="currentPosition">Положение фигуры:</label>
+            <input
+              type="text"
+              id="currentPosition"
+              maxlength="2"
+              required
+              pattern="^[a-hA-H]{1}[1-8]{1}$"
+            />
+          </div>
 
-                </div>
-
-                <button type="submit"
-                    id="submitButton">Показать ходы</button>
-            </form>
-            <hr>
-        </div>
+          <button type="submit" id="submitButton">Показать ходы</button>
+        </form>
+        <hr />
+      </div>
     </main>
 
-    <script src="./src/app/horsyfier.js"></script>
-    <script src="./src/app/controller.js"></script>
-    <script src="./src/app/app.js"></script>
-    <script src="./src/index.js"></script>
-</body>
-
+    <script type="module" src="./src/index.mjs"></script>
+  </body>
 </html>
