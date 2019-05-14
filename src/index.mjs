@@ -1,7 +1,10 @@
-import { initializeApp } from './app/app.mjs';
+// eslint-disable-next-line import/extensions
+import initializeApp from './app/app.mjs';
 
-document.addEventListener('DOMContentLoaded', initialize);
-
-function initialize() {
+const initialize = function initialize() {
+  // eslint-disable-next-line no-undef
   initializeApp(document);
-}
+};
+
+// eslint-disable-next-line no-undef
+document.addEventListener('DOMContentLoaded', initialize);

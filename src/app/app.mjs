@@ -1,9 +1,12 @@
-import { HorsyfierController } from './Controller.mjs';
+/* eslint-disable import/extensions */
 import { Horsyfier } from './Horsyfier.mjs';
+import Controller from './Controller.mjs';
 
-export function initializeApp(document) {
+const initializeApp = function initializeApp(document) {
   const appDiv = document.querySelector('#app-horsyfier');
 
-  const horsyController = new HorsyfierController(appDiv, new Horsyfier());
-  horsyController.initialize();
-}
+  const controller = new Controller(appDiv, new Horsyfier());
+  controller.initialize();
+};
+
+export default initializeApp;
